@@ -497,13 +497,14 @@ function textAt(p, text, size = 20, attr = '') {
     .join('')}</text>`;
 }
 function measureValue(o) {
+  if (o.scaleMarker) return `${bigScale()} ${doc.settings.unit}`;
   if (!o.auto) return o.text || '';
   const [a, b] = points(o),
     n = (Math.hypot(b.x - a.x, b.y - a.y) / STEP) * doc.settings.scale;
   return `${Number(n.toFixed(3))} ${doc.settings.unit}`;
 }
 function objectSVG(o, interactive = false) {
-  if (o._opticsHidden) return '';
+  if (o._opticsHidden || (o.scaleMarker && !doc.settings.markers)) return '';
   let body = '',
     color = esc(o.color),
     stroke = `stroke="${color}" stroke-width="${o.width || 2}" stroke-linecap="round" fill="none"`,
@@ -634,6 +635,14 @@ function activeLabel() {
     : null;
 }
 function labelEdit(o, key, prop, value) {
+  if (o.scaleMarker && prop === 'text') {
+    const parsed = parseScale(value);
+    if (parsed) {
+      doc.settings.scale = parsed.value / 5;
+      doc.settings.unit = parsed.unit;
+    }
+    return;
+  }
   if (o.labels) {
     o.labels[Number(key)][prop] = value;
     return;
@@ -696,34 +705,38 @@ function bounds(o) {
     h,
   };
 }
-function scaleSVG() {
-  if (!doc.settings.markers) return '';
-  const p = { x: 75, y: 70 },
-    c = '#70837b';
-  return (
-    `<g>` +
-    line(p, { x: 115, y: 70 }, `stroke="${c}" stroke-width="1.3"`) +
-    head(p, Math.PI, c, 6) +
-    head({ x: 115, y: 70 }, 0, c, 6) +
-    line(p, { x: 75, y: 110 }, `stroke="${c}" stroke-width="1.3"`) +
-    head(p, -Math.PI / 2, c, 6) +
-    head({ x: 75, y: 110 }, Math.PI / 2, c, 6) +
-    textAt(
-      { x: 95, y: 56 },
-      `${doc.settings.scale} ${doc.settings.unit}`,
-      13,
-      `fill="${c}" text-anchor="middle"`,
-    ) +
-    textAt(
-      { x: 63, y: 96 },
-      `${doc.settings.scale} ${doc.settings.unit}`,
-      13,
-      `fill="${c}" text-anchor="end"`,
-    ) +
-    `</g>`
-  );
+function bigScale() {
+  return Number((doc.settings.scale * 5).toPrecision(12));
+}
+function parseScale(text) {
+  const match = String(text)
+    .trim()
+    .match(/^([+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*(mm|cm|m)?$/i);
+  const value = match ? Number(match[1]) : NaN;
+  return value >= 0.000005 && value <= 500000
+    ? { value, unit: match[2]?.toLowerCase() || doc.settings.unit }
+    : null;
+}
+function ensureScaleMarkers(restore = false) {
+  if (!doc.settings.markers || (doc.settings.scaleMarkersInitialized && !restore)) return;
+  doc.settings.scaleMarkersInitialized = true;
+  const x = 0;
+  const y = 0;
+  for (const orientation of ['horizontal', 'vertical']) {
+    if (doc.objects.some((o) => o.scaleMarker && o.orientation === orientation)) continue;
+    const o = make(
+      'measure',
+      { x, y },
+      {
+        x: x + (orientation === 'horizontal' ? BIG : 0),
+        y: y + (orientation === 'vertical' ? BIG : 0),
+      },
+    );
+    Object.assign(o, { scaleMarker: true, color: '#70837b', orientation });
+  }
 }
 function renderScene() {
+  ensureScaleMarkers();
   updateOptics();
   $('#clear-all-btn').disabled = doc.objects.length === 0 && !drawing;
   const nw = doc.settings.columns * BIG,
@@ -740,10 +753,9 @@ function renderScene() {
   if (changed) requestAnimationFrame(fit);
   $('#objects-layer').innerHTML = doc.objects.map((o) => objectSVG(o, true)).join('');
   $('#grid-layer').style.display = doc.settings.grid ? '' : 'none';
-  $('#scale-layer').innerHTML = scaleSVG();
   renderSelection();
   renderPreview();
-  $('#scale-summary').textContent = `1 small square = ${doc.settings.scale} ${doc.settings.unit}`;
+  $('#scale-summary').textContent = `1 big square = ${bigScale()} ${doc.settings.unit}`;
   $('#object-count').textContent =
     `${doc.objects.length} object${doc.objects.length === 1 ? '' : 's'}`;
 }
@@ -767,7 +779,7 @@ function renderSelection() {
     c = midpoint(o),
     rad = 6 / view.k;
   let out = `<rect class="selected-outline" x="${b.x - 10}" y="${b.y - 10}" width="${b.w + 20}" height="${b.h + 20}"/>`;
-  if (opticalDerived(o)) {
+  if (opticalDerived(o) || o.scaleMarker) {
     layer.innerHTML = o._opticsHidden ? '' : out;
     return;
   }
@@ -804,6 +816,8 @@ function renderPreview() {
     `<circle cx="${q.x}" cy="${q.y}" r="5" fill="#d77741" pointer-events="none"/>`;
 }
 function objectTypeName(o) {
+  if (o.scaleMarker)
+    return `${o.orientation === 'vertical' ? 'Vertical' : 'Horizontal'} scale arrow`;
   return o.type === 'point' && ['dot', 'dash'].includes(o.marker)
     ? o.marker === 'dot'
       ? 'Dot'
@@ -938,7 +952,18 @@ function renderProperties() {
       field('Optional label', 'label', o.label, 'text') +
       field('Label font size', 'fontSize', o.fontSize, 'number', 'min="8" max="200"') +
       `<div class="form-row">${field('Label offset X', 'dx', o.dx)}${field('Label offset Y', 'dy', o.dy)}</div>`;
-  if (o.type === 'measure')
+  if (o.scaleMarker)
+    out += `<p>Scale arrow: one big square. Drag the arrow to move it, or select its label to edit the shared Grid Scale.</p>${field('1 big square equals', 'scaleValue', bigScale(), 'number', 'min="0.000005" max="500000" step="any"')}${selectField(
+      'Unit',
+      'scaleUnit',
+      doc.settings.unit,
+      [
+        ['m', 'm'],
+        ['cm', 'cm'],
+        ['mm', 'mm'],
+      ],
+    )}${field('Font size (px)', 'fontSize', o.fontSize, 'number', 'min="8" max="200"')}`;
+  if (o.type === 'measure' && !o.scaleMarker)
     out +=
       selectField('Orientation', 'orientation', o.orientation, [
         ['horizontal', 'Horizontal'],
@@ -982,7 +1007,7 @@ function renderProperties() {
   $$('#properties details').forEach((el) => {
     el.open = expanded.has(el.querySelector('summary').textContent);
   });
-  if (opticalDerived(o))
+  if (opticalDerived(o) || o.scaleMarker)
     for (const key of [
       'length',
       'angle',
@@ -1012,7 +1037,7 @@ function render() {
   $('#grid-columns').value = doc.settings.columns;
   $('#grid-size-summary').textContent =
     `${doc.settings.rows} rows × ${doc.settings.columns} columns · 5 × 5 subdivisions`;
-  $('#grid-scale').value = doc.settings.scale;
+  $('#grid-scale').value = bigScale();
   $('#grid-unit').value = doc.settings.unit;
   $('#show-grid').checked = doc.settings.grid;
   $('#show-markers').checked = doc.settings.markers;
@@ -1055,12 +1080,31 @@ function cancelDraw() {
   $('#preview-layer').innerHTML = '';
   updateHint();
 }
+function diagramFrame() {
+  let x = 0,
+    y = 0,
+    right = W,
+    bottom = H;
+  if (doc.settings.markers)
+    for (const o of doc.objects.filter((item) => item.scaleMarker)) {
+      const element = $(`[data-oid="${o.id}"]`);
+      if (!element) continue;
+      const b = element.getBBox(),
+        padding = Math.max(10, o.width / 2 + 2);
+      x = Math.min(x, b.x - padding);
+      y = Math.min(y, b.y - padding);
+      right = Math.max(right, b.x + b.width + padding);
+      bottom = Math.max(bottom, b.y + b.height + padding);
+    }
+  return { x, y, width: right - x, height: bottom - y };
+}
 function fit() {
   const r = svg.getBoundingClientRect();
-  view.k = Math.min((r.width - 54) / W, (r.height - 110) / H);
+  const frame = diagramFrame();
+  view.k = Math.min((r.width - 54) / frame.width, (r.height - 110) / frame.height);
   view.k = clamp(view.k, 0.025, 3);
-  view.x = (r.width - W * view.k) / 2;
-  view.y = (r.height - H * view.k) / 2 + 8;
+  view.x = (r.width - frame.width * view.k) / 2 - frame.x * view.k;
+  view.y = (r.height - frame.height * view.k) / 2 + 8 - frame.y * view.k;
   updateView();
 }
 function updateView() {
@@ -1174,7 +1218,20 @@ function finishSegment(q) {
 function changeProperty(key, val) {
   const o = current();
   if (!o) return;
+  if (o.scaleMarker && key === 'attached.text' && !parseScale(val)) {
+    toast('Enter a positive scale, such as 0.751 m.');
+    renderProperties();
+    return;
+  }
   change(() => {
+    if (o.scaleMarker && key === 'scaleValue') {
+      doc.settings.scale = val / 5;
+      return;
+    }
+    if (o.scaleMarker && key === 'scaleUnit') {
+      doc.settings.unit = val;
+      return;
+    }
     if (key === 'liveReflection') {
       doc.optics.enabled = val;
       return;
@@ -1322,6 +1379,11 @@ function layerMove(n) {
 }
 function translate(o, dx, dy, source) {
   if (opticalDerived(o)) return;
+  if (o.scaleMarker) {
+    const a = source.nodes[o.nodes[0]];
+    dx = Math.round((a.x + dx) / STEP) * STEP - a.x;
+    dy = Math.round((a.y + dy) / STEP) * STEP - a.y;
+  }
   if (o.nodes) {
     for (const id of new Set(o.nodes)) {
       doc.nodes[id].x = source.nodes[id].x + dx;
@@ -1433,7 +1495,7 @@ function onMove(e) {
   if (gesture.kind === 'move') {
     let dx = raw.x - gesture.start.x,
       dy = raw.y - gesture.start.y;
-    if (doc.settings.snapGrid) {
+    if (doc.settings.snapGrid || o.scaleMarker) {
       dx = Math.round(dx / STEP) * STEP;
       dy = Math.round(dy / STEP) * STEP;
     }
@@ -1664,7 +1726,30 @@ for (const [id, key] of [
   $('#' + id).onchange = (e) =>
     change(() => {
       doc.settings[key] = e.target.checked;
+      if (key === 'markers') {
+        selected = null;
+        selectedLabel = null;
+        ensureScaleMarkers();
+      }
     });
+$('#restore-markers').onclick = () =>
+  change(() => {
+    doc.settings.markers = true;
+    ensureScaleMarkers(true);
+  });
+$('#reset-marker-position').onclick = () =>
+  change(() => {
+    for (const o of doc.objects.filter((item) => item.scaleMarker)) {
+      // Paper coordinates are independent of the viewport and previous grid size.
+      doc.nodes[o.nodes[0]] = { x: 0, y: 0 };
+      doc.nodes[o.nodes[1]] = {
+        x: o.orientation === 'horizontal' ? BIG : 0,
+        y: o.orientation === 'vertical' ? BIG : 0,
+      };
+      o.labelDx = 0;
+      o.labelDy = 0;
+    }
+  });
 $('#apply-grid-size').onclick = () => {
   const rows = Number($('#grid-rows').value),
     columns = Number($('#grid-columns').value);
@@ -1709,12 +1794,12 @@ $('#apply-grid-size').onclick = () => {
 };
 $('#grid-scale').onchange = (e) => {
   const n = Number(e.target.value);
-  if (n > 0 && n <= 100000)
+  if (n >= 0.000005 && n <= 500000)
     change(() => {
-      doc.settings.scale = n;
+      doc.settings.scale = n / 5;
     });
   else {
-    e.target.value = doc.settings.scale;
+    e.target.value = bigScale();
     toast('Grid Scale must be greater than zero.');
   }
 };
@@ -1867,7 +1952,8 @@ window.addEventListener('blur', () => {
 });
 function exportSVG(includeGrid = true, includeScale = true) {
   const defs = svg.querySelector('defs').outerHTML;
-  return `<svg xmlns="${NS}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><title>${esc(doc.name)}</title>${defs}<rect width="${W}" height="${H}" fill="white"/>${includeGrid ? `<rect width="${W}" height="${H}" fill="url(#major-grid)"/>` : ''}${scaleSVG()}${doc.objects.map((o) => objectSVG(o, false)).join('')}${includeScale ? `<rect x="20" y="${H - 40}" width="280" height="27" rx="4" fill="white"/>${textAt({ x: 30, y: H - 21 }, `1 small square = ${doc.settings.scale} ${doc.settings.unit}`, 14, 'fill="#536d60"')}` : ''}</svg>`;
+  const frame = diagramFrame();
+  return `<svg xmlns="${NS}" width="${W}" height="${H}" viewBox="${frame.x} ${frame.y} ${frame.width} ${frame.height}"><title>${esc(doc.name)}</title>${defs}<rect x="${frame.x}" y="${frame.y}" width="${frame.width}" height="${frame.height}" fill="white"/>${includeGrid ? `<rect width="${W}" height="${H}" fill="url(#major-grid)"/>` : ''}${doc.objects.map((o) => objectSVG(o, false)).join('')}${includeScale ? `<rect x="20" y="${H - 40}" width="280" height="27" rx="4" fill="white"/>${textAt({ x: 30, y: H - 21 }, `1 big square = ${bigScale()} ${doc.settings.unit}`, 14, 'fill="#536d60"')}` : ''}</svg>`;
 }
 async function raster(source) {
   const image = new Image(),

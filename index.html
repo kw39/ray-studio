@@ -103,7 +103,6 @@
                 stroke-width="1.7"
                 pointer-events="none"
               />
-              <g id="scale-layer"></g>
               <g id="objects-layer"></g>
               <g id="preview-layer"></g>
               <g id="selection-layer"></g>
@@ -111,8 +110,7 @@
           </svg>
           <div class="canvas-bottom">
             <div class="scale-pill">
-              <span class="scale-icon">↔</span
-              ><span id="scale-summary">1 small square = 0.5 m</span>
+              <span class="scale-icon">↔</span><span id="scale-summary">1 big square = 2.5 m</span>
             </div>
             <div class="zoom-pill">
               <button id="zoom-out" aria-label="Zoom out">−</button
@@ -165,18 +163,20 @@
           </button>
           <h3>
             Grid Scale
-            <span title="Real-world distance represented by one small grid square">ⓘ</span>
+            <span title="Real-world distance represented by one big grid square (5 small squares)"
+              >ⓘ</span
+            >
           </h3>
           <p>Give your diagram a sense of scale.</p>
           <div class="form-row">
             <label
-              >1 small square equals<input
+              >1 big square equals<input
                 id="grid-scale"
                 type="number"
-                min="0.001"
-                max="100000"
-                step="0.25"
-                value="0.5" /></label
+                min="0.000005"
+                max="500000"
+                step="any"
+                value="2.5" /></label
             ><label class="unit-field"
               >Unit<select id="grid-unit">
                 <option>m</option>
@@ -189,6 +189,8 @@
           ><label class="check-row"
             ><input id="show-markers" type="checkbox" /> Show scale markers</label
           >
+          <button id="restore-markers" type="button">Restore missing scale arrows</button>
+          <button id="reset-marker-position" type="button">Reset scale marker position</button>
         </section>
         <section class="layers-section">
           <div class="section-heading">
