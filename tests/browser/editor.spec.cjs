@@ -48,13 +48,23 @@ test('scale markers reset to the paper corner after shrinking or enlarging the g
     const d = await state(page);
     for (const o of d.objects.filter((item) => item.scaleMarker)) {
       const [a, b] = o.nodes.map((id) => d.nodes[id]);
-      expect(a).toEqual({ x: 40, y: 80 });
-      expect(b).toEqual(o.orientation === 'horizontal' ? { x: 240, y: 80 } : { x: 40, y: 280 });
+      expect(a).toEqual({ x: 0, y: 0 });
+      expect(b).toEqual(o.orientation === 'horizontal' ? { x: 200, y: 0 } : { x: 0, y: 200 });
       expect(b.x).toBeLessThan(d.settings.columns * 200);
       expect(b.y).toBeLessThan(d.settings.rows * 200);
     }
   };
   await checkCorner();
+  const exportFrame = await page.evaluate(() => {
+    const svg = new DOMParser().parseFromString(
+      window.rayStudio.exportSVG(),
+      'image/svg+xml',
+    ).documentElement;
+    return svg.getAttribute('viewBox').split(' ').map(Number);
+  });
+  expect(exportFrame[0]).toBeLessThan(0);
+  expect(exportFrame[1]).toBeLessThan(-54);
+  await page.screenshot({ path: test.info().outputPath('exact-corner.png') });
   for (const [rows, columns] of [
     [2, 2],
     [12, 10],

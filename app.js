@@ -720,8 +720,8 @@ function parseScale(text) {
 function ensureScaleMarkers(restore = false) {
   if (!doc.settings.markers || (doc.settings.scaleMarkersInitialized && !restore)) return;
   doc.settings.scaleMarkersInitialized = true;
-  const x = STEP;
-  const y = STEP * 2;
+  const x = 0;
+  const y = 0;
   for (const orientation of ['horizontal', 'vertical']) {
     if (doc.objects.some((o) => o.scaleMarker && o.orientation === orientation)) continue;
     const o = make(
@@ -1080,12 +1080,31 @@ function cancelDraw() {
   $('#preview-layer').innerHTML = '';
   updateHint();
 }
+function diagramFrame() {
+  let x = 0,
+    y = 0,
+    right = W,
+    bottom = H;
+  if (doc.settings.markers)
+    for (const o of doc.objects.filter((item) => item.scaleMarker)) {
+      const element = $(`[data-oid="${o.id}"]`);
+      if (!element) continue;
+      const b = element.getBBox(),
+        padding = Math.max(10, o.width / 2 + 2);
+      x = Math.min(x, b.x - padding);
+      y = Math.min(y, b.y - padding);
+      right = Math.max(right, b.x + b.width + padding);
+      bottom = Math.max(bottom, b.y + b.height + padding);
+    }
+  return { x, y, width: right - x, height: bottom - y };
+}
 function fit() {
   const r = svg.getBoundingClientRect();
-  view.k = Math.min((r.width - 54) / W, (r.height - 110) / H);
+  const frame = diagramFrame();
+  view.k = Math.min((r.width - 54) / frame.width, (r.height - 110) / frame.height);
   view.k = clamp(view.k, 0.025, 3);
-  view.x = (r.width - W * view.k) / 2;
-  view.y = (r.height - H * view.k) / 2 + 8;
+  view.x = (r.width - frame.width * view.k) / 2 - frame.x * view.k;
+  view.y = (r.height - frame.height * view.k) / 2 + 8 - frame.y * view.k;
   updateView();
 }
 function updateView() {
@@ -1722,10 +1741,10 @@ $('#reset-marker-position').onclick = () =>
   change(() => {
     for (const o of doc.objects.filter((item) => item.scaleMarker)) {
       // Paper coordinates are independent of the viewport and previous grid size.
-      doc.nodes[o.nodes[0]] = { x: STEP, y: STEP * 2 };
+      doc.nodes[o.nodes[0]] = { x: 0, y: 0 };
       doc.nodes[o.nodes[1]] = {
-        x: STEP + (o.orientation === 'horizontal' ? BIG : 0),
-        y: STEP * 2 + (o.orientation === 'vertical' ? BIG : 0),
+        x: o.orientation === 'horizontal' ? BIG : 0,
+        y: o.orientation === 'vertical' ? BIG : 0,
       };
       o.labelDx = 0;
       o.labelDy = 0;
@@ -1933,7 +1952,8 @@ window.addEventListener('blur', () => {
 });
 function exportSVG(includeGrid = true, includeScale = true) {
   const defs = svg.querySelector('defs').outerHTML;
-  return `<svg xmlns="${NS}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><title>${esc(doc.name)}</title>${defs}<rect width="${W}" height="${H}" fill="white"/>${includeGrid ? `<rect width="${W}" height="${H}" fill="url(#major-grid)"/>` : ''}${doc.objects.map((o) => objectSVG(o, false)).join('')}${includeScale ? `<rect x="20" y="${H - 40}" width="280" height="27" rx="4" fill="white"/>${textAt({ x: 30, y: H - 21 }, `1 big square = ${bigScale()} ${doc.settings.unit}`, 14, 'fill="#536d60"')}` : ''}</svg>`;
+  const frame = diagramFrame();
+  return `<svg xmlns="${NS}" width="${W}" height="${H}" viewBox="${frame.x} ${frame.y} ${frame.width} ${frame.height}"><title>${esc(doc.name)}</title>${defs}<rect x="${frame.x}" y="${frame.y}" width="${frame.width}" height="${frame.height}" fill="white"/>${includeGrid ? `<rect width="${W}" height="${H}" fill="url(#major-grid)"/>` : ''}${doc.objects.map((o) => objectSVG(o, false)).join('')}${includeScale ? `<rect x="20" y="${H - 40}" width="280" height="27" rx="4" fill="white"/>${textAt({ x: 30, y: H - 21 }, `1 big square = ${bigScale()} ${doc.settings.unit}`, 14, 'fill="#536d60"')}` : ''}</svg>`;
 }
 async function raster(source) {
   const image = new Image(),
