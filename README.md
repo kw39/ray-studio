@@ -16,7 +16,7 @@ standard visitor logs under its privacy policy.
 
 ### Standalone Windows app — no Node.js needed
 
-[Download Ray Studio for Windows x64](https://github.com/kw39/ray-studio/releases/download/v1.2.0/Ray-Studio-1.2.0-windows-x64.zip) · [Release details](https://github.com/kw39/ray-studio/releases/tag/v1.2.0)
+[Download Ray Studio for Windows x64](https://github.com/kw39/ray-studio/releases/download/v1.2.1/Ray-Studio-1.2.1-windows-x64.zip) · [Release details](https://github.com/kw39/ray-studio/releases/tag/v1.2.1)
 
 Extract the packaged Windows download and double-click **Ray Studio.exe**. It opens the editor in your default browser. The executable includes its runtime and app files, works offline, and does not require administrator access or a Node.js installation. It targets Windows 10/11 x64 with a modern browser.
 
@@ -63,6 +63,8 @@ To try it, choose **Load reflection example**, select the eye, and drag it. The 
 - **Opening index.html directly does not work:** use the launcher or a static web server because the app loads JavaScript as a module.
 
 ## Drawing and editing
+
+- New dots have a diameter of one small grid square (40 drawing units). Their labels start beside the dot, and existing saved marker sizes remain unchanged.
 
 - New labels and text start at 54 px. Select an attached label or text object and drag its square corner handle to resize it, or enter a font size in Properties (8–200 px). Saved projects retain their chosen font sizes.
 - Choose **Text** (T), click the grid, and write in the Text field in Properties. Line breaks, bold, italic, alignment, rotation, and corner resizing are supported.
@@ -140,7 +142,7 @@ npm run build:windows
 npm run test:exe
 ```
 
-The build downloads the official Node.js 24.19.0 runtime, checks its SHA-256 against the official distribution checksums, and embeds the app using Node's single-executable format. Build-time downloads require internet access. The resulting folder is `dist/Ray-Studio-1.2.0-windows-x64/`, including the executable, a quick-start guide, application license, runtime notices, checksum, and build metadata.
+The build downloads the official Node.js 24.19.0 runtime, checks its SHA-256 against the official distribution checksums, and embeds the app using Node's single-executable format. Build-time downloads require internet access. The resulting folder is `dist/Ray-Studio-1.2.1-windows-x64/`, including the executable, a quick-start guide, application license, runtime notices, checksum, and build metadata.
 
 `test:exe` copies only the executable into an isolated folder, removes Node from its PATH, verifies the embedded assets, and runs the browser tests against it. These checks currently run locally; GitHub Actions is not yet enabled for this repository.
 
