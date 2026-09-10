@@ -39,6 +39,76 @@ test.beforeEach(async ({ page }) => {
   await page.goto('./');
   await page.waitForFunction(() => window.rayStudio);
 });
+test('grid-sized symbols, persistent sections, and draggable text sizing', async ({ page }) => {
+  await page.locator('#clear-all-btn').click();
+  const place = async (type, x, y) => {
+    const tool = page.locator(`[data-tool="${type}"]`);
+    if (!(await tool.getAttribute('class')).includes('active')) await tool.click();
+    const p = await page.locator('#canvas').evaluate(
+      (svg, point) => {
+        const world = svg.querySelector('#world');
+        const v = new DOMPoint(point.x, point.y).matrixTransform(world.getScreenCTM());
+        return { x: v.x, y: v.y };
+      },
+      { x, y },
+    );
+    await page.mouse.click(p.x, p.y);
+  };
+  await place('mirror', 400, 200);
+  await place('mirror', 400, 520);
+  const mirror = (await state(page)).objects.find((o) => o.type === 'mirror');
+  await select(page, mirror.id);
+  expect(mirror.labels[0].size).toBe(54);
+  const hatch = page.locator(`[data-oid="${mirror.id}"] > line`).last();
+  const length = await hatch.evaluate((el) =>
+    Math.hypot(
+      el.x2.baseVal.value - el.x1.baseVal.value,
+      el.y2.baseVal.value - el.y1.baseVal.value,
+    ),
+  );
+  expect(length).toBeCloseTo(40);
+  const section = page
+    .locator('details')
+    .filter({ has: page.getByText('End label position & style', { exact: true }) });
+  await section.locator('summary').click();
+  await page.locator('[data-prop="label.1.dx"]').fill('35');
+  await page.locator('[data-prop="label.1.dx"]').press('Tab');
+  await expect(section).toHaveAttribute('open', '');
+  await page.locator('[data-prop="width"]').fill('6');
+  await page.locator('[data-prop="width"]').press('Tab');
+  await expect(hatch).toHaveAttribute('stroke-width', '6');
+  await page.locator(`[data-oid="${mirror.id}"] [data-label="0"]`).click();
+  const corner = await page.locator('[data-handle="label-resize"]').boundingBox();
+  await page.mouse.move(corner.x + corner.width / 2, corner.y + corner.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(corner.x + 65, corner.y + 20, { steps: 5 });
+  await page.mouse.up();
+  expect(
+    (await state(page)).objects.find((o) => o.id === mirror.id).labels[0].size,
+  ).toBeGreaterThan(54);
+  await page.keyboard.press('Control+z');
+  expect((await state(page)).objects.find((o) => o.id === mirror.id).labels[0].size).toBe(54);
+  await place('label', 150, 250);
+  await page.locator('[data-prop="text"]').fill('First line\nSecond line');
+  await page.locator('[data-prop="text"]').press('Tab');
+  const text = (await state(page)).objects.find((o) => o.type === 'label');
+  expect(text.fontSize).toBe(54);
+  await expect(page.locator(`[data-oid="${text.id}"] tspan`)).toHaveCount(2);
+  await place('arrow', 700, 200);
+  await place('arrow', 700, 520);
+  const arrow = (await state(page)).objects.find((o) => o.type === 'arrow');
+  await select(page, arrow.id);
+  const arrowhead = page.locator(`[data-oid="${arrow.id}"] > path`).first();
+  const box = await arrowhead.evaluate((el) => ({
+    width: el.getBBox().width,
+    height: el.getBBox().height,
+  }));
+  expect(box.width).toBeCloseTo(40);
+  expect(box.height).toBeCloseTo(40);
+  await page.locator('[data-prop="width"]').fill('4.6');
+  await page.locator('[data-prop="width"]').press('Tab');
+  expect(await arrowhead.evaluate((el) => el.getBBox().width)).toBeCloseTo(80);
+});
 test('observer dragging, geometry, grid centering, and disconnect remain correct', async ({
   page,
 }) => {
@@ -126,24 +196,20 @@ test('invalid project input cannot replace the current diagram or inject markup'
   const before = await state(page),
     bad = structuredClone(before);
   bad.objects.find((o) => o.type === 'eye').labelDx = '" onload="alert(1)';
-  await page
-    .locator('#open-file')
-    .setInputFiles({
-      name: 'bad.ray.json',
-      mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify(bad)),
-    });
+  await page.locator('#open-file').setInputFiles({
+    name: 'bad.ray.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(bad)),
+  });
   await expect(page.locator('#toast')).toContainText('Invalid');
   expect(await state(page)).toEqual(before);
   const escaped = structuredClone(before);
   escaped.objects.find((o) => o.labels).labels[0].align = 'start" onload="alert(1)';
-  await page
-    .locator('#open-file')
-    .setInputFiles({
-      name: 'escaped.ray.json',
-      mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify(escaped)),
-    });
+  await page.locator('#open-file').setInputFiles({
+    name: 'escaped.ray.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(escaped)),
+  });
   await expect(page.locator('#toast')).toContainText('Project opened');
   expect(await page.locator('#objects-layer [onload]').count()).toBe(0);
 });

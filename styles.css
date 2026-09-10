@@ -518,6 +518,7 @@ label.field,
   line-height: 1.5;
 }
 input:not([type='checkbox']):not([type='color']),
+textarea,
 select {
   height: 32px;
   border: 1px solid #dde5df;
@@ -528,12 +529,19 @@ select {
   min-width: 0;
 }
 label.field input,
+label.field textarea,
 label.field select,
 .form-row input,
 .form-row select {
   display: block;
   width: 100%;
   margin-top: 5px;
+}
+label.field textarea {
+  height: auto;
+  min-height: 88px;
+  resize: vertical;
+  font: inherit;
 }
 input[type='color'] {
   width: 100%;
