@@ -2,40 +2,45 @@
 
 A self-contained physics ray-diagram editor for teachers and students. All project data stays in your browser or in files you save. The app has no external dependencies, analytics, accounts, or network APIs.
 
-## Run
+## Quick start
 
-With Node.js installed, open a terminal in this directory and run:
+### Windows
 
-```sh
-npm start
-```
+1. Install the **LTS version of [Node.js](https://nodejs.org/)** if it is not already installed.
+2. Download this repository using **Code → Download ZIP**, then extract the ZIP.
+3. Double-click **Start Ray Studio.bat** in the extracted folder.
 
-Open **http://127.0.0.1:4173**. Alternatively, any static web server can serve this directory. Use a web server rather than opening `index.html` as a local file because the app uses a JavaScript module.
+The launcher starts a local server and automatically opens Ray Studio in your default browser. Keep its terminal window open while using the app. Close the window or press **Ctrl+C** to stop the server. Running the launcher again opens the existing Ray Studio instance.
 
-Use a current Node.js LTS release. No dependency installation or build step is required. On Windows, you can also run `./Start Ray Studio.ps1` in PowerShell. The launcher uses Node on PATH and keeps the server in the terminal; closing it stops the server.
+No build step or `npm install` is required. After downloading the app and installing Node.js, you can use it offline.
 
-## Upload to GitHub
+### macOS, Linux, or terminal users
 
-Extract the release ZIP and upload the **contents** of its `ray-studio` folder into your repository root. Include `index.html`, `app.js`, `styles.css`, `serve.cjs`, `package.json`, `README.md`, `.gitignore`, and the optional PowerShell launcher.
-
-Alternatively, create an empty GitHub repository, open a terminal in the extracted `ray-studio` folder, and run these commands. Replace `YOUR_USERNAME` and the repository name with your own:
+With Node.js installed, open a terminal in the app folder and run:
 
 ```sh
-git init
-git add .
-git commit -m "Add Ray Studio diagram editor"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/ray-studio.git
-git push -u origin main
+npm start -- --open
 ```
 
-These commands assume the remote repository is empty. GitHub authentication is handled by your Git installation.
+This starts the server and opens your default browser. Run `npm start` to start without opening a browser. The default address is **http://127.0.0.1:4173**. Windows PowerShell users can also run `./Start Ray Studio.ps1`.
 
-## Static hosting
+## What you can do
 
-The app runs entirely in the browser. To host it on a static website, publish `index.html`, `app.js`, and `styles.css` together in the same directory. Relative asset paths support hosting under a repository subdirectory. There is no build command, backend, API key, or environment configuration. `serve.cjs` is only a local development server; a static host does not need to run it.
+- Draw mirrors, light rays, arrows, lines, measurements, dots, dashes, points, and observers.
+- Move, resize, rotate, and style objects, with independently editable labels.
+- Use a square grid with 5 × 5 subdivisions, adjustable dimensions, snapping, and real-world scale.
+- Explore a live reflection example with a virtual image and correctly aligned ray extensions.
+- Save editable projects, export PNG/SVG/PDF, and print clean diagrams.
 
-Saved diagrams belong to each browser and site address. Moving from localhost to a hosted site does not transfer browser storage: use **Save project** and **Open** to transfer your work.
+To try it, choose **Load reflection example**, select the eye, and drag it. The rays update automatically.
+
+## Troubleshooting
+
+- **Node.js is missing:** install Node.js LTS, then reopen the launcher. If you installed it while a terminal was open, open a new terminal first.
+- **Port 4173 is in use:** close the other server or choose another port. In PowerShell, run `$env:PORT = '4174'` followed by `npm start -- --open`.
+- **The browser does not open:** open the address shown in the terminal manually.
+- **The app stops loading:** keep the server window open. Start the launcher again if you closed it.
+- **Opening index.html directly does not work:** use the launcher or a static web server because the app loads JavaScript as a module.
 
 ## Drawing and editing
 
@@ -92,6 +97,6 @@ Ordinary diagrams use manual construction. The reflection example additionally s
 
 ## Verification
 
-Run `npm run check` to check JavaScript syntax. For a quick functional check, load the reflection example, drag the observer, resize the grid, undo, save and reopen a project, and export an SVG. The release package excludes local browser-test scripts, generated diagrams, screenshots, and machine-specific runtime paths.
+Run `npm run check` to check JavaScript syntax. For a quick functional check, load the reflection example, drag the observer, resize the grid, undo, save and reopen a project, and export an SVG. Run `npm test` to verify server startup and launcher behavior.
 
 Files: `index.html` provides the interface, `styles.css` the responsive layout, `app.js` the SVG editor and export logic, and `serve.cjs` the local-only static server.

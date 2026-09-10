@@ -1,1 +1,1 @@
-{"name":"ray-studio","version":"1.0.0","private":true,"description":"Local SVG physics ray diagram editor","scripts":{"start":"node serve.cjs","check":"node --check app.js"}}
+{"name":"ray-studio","version":"1.0.0","private":true,"description":"Local SVG physics ray diagram editor","scripts":{"start":"node serve.cjs","check":"node --check app.js && node --check serve.cjs","test":"node --test tests/server.test.cjs"}}
