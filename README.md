@@ -70,6 +70,8 @@ To try it, choose **Load reflection example**, select the eye, and drag it. The 
 - Choose **Text** (T), click the grid, and write in the Text field in Properties. Line breaks, bold, italic, alignment, rotation, and corner resizing are supported.
 - Mirror hatch marks are one small square long. At default thickness, arrowheads are one small square high and wide; increasing thickness enlarges the heads too. Mirror hatching and measurement ticks follow their object's line thickness.
 - Expanded property sections stay open while you edit the same object.
+- **Grid Scale** is the real-world length of one **big square** (five small squares). Edit it in the main Properties panel or select a scale-arrow label and enter a value such as `0.751 m`; both controls and both arrows update together. Automatic measurements update too.
+- **Show scale markers** adds independent horizontal and vertical arrows, each exactly one big square long with endpoints on grid intersections. Select an arrow to move or delete it; select its label to edit, move, resize, or delete the label. The arrow length stays fixed so it continues to represent one big square. **Restore missing scale arrows** brings back deleted arrows. Hiding/showing markers preserves deletions; undo and saved projects preserve edits.
 
 - Drag a drawing tool onto the page to place a default object. Or choose a tool, then click the beginning and end of a line. Click-and-drag also draws a single segment. Text, markers, and eyes need only one click.
 - The Light ray tool continues from the previous endpoint. Press **Enter** or double-click to finish. **Escape** cancels the pending segment and returns to selection; completed segments remain.
@@ -117,7 +119,7 @@ To try it, choose **Load reflection example**, select the eye, and drag it. The 
 
 ## Scope
 
-The default page is 4 large-square rows × 5 large-square columns, or 1000 × 800 drawing units. A small square is 40 units; a large square is 200 units. Grid Scale changes the real-world meaning of one **small square**. Geometry coordinates in Properties are measured in small squares, with the origin at the top-left. Positive rotation is clockwise. Existing projects without row/column settings open with the default grid size.
+The default page is 4 large-square rows × 5 large-square columns, or 1000 × 800 drawing units. A small square is 40 units; a large square is 200 units. Grid Scale shows the real-world meaning of one **big square**. Geometry coordinates in Properties are measured in small squares, with the origin at the top-left. Positive rotation is clockwise. Existing projects without row/column settings open with the default grid size. Old projects keep their real-world measurements: 0.5 m per small square is displayed as 2.5 m per big square. For file compatibility, `settings.scale` continues to store the value per small square internally.
 
 Ordinary diagrams use manual construction. The reflection example additionally supports live plane-mirror geometry. Selection is one object at a time. It prioritizes desktop and tablet; on narrow screens the Properties panel moves below the canvas. Touch placement and editing are supported, with zoom buttons for tablets.
 

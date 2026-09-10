@@ -89,6 +89,7 @@ export function validateProject(value) {
     if (raw.align !== undefined) o.align = choice(raw.align, ['start', 'middle', 'end'], 'start');
     if (o.type === 'mirror') o.side = raw.side === -1 ? -1 : 1;
     if (o.type === 'measure') {
+      if (raw.scaleMarker) o.scaleMarker = true;
       o.orientation = choice(raw.orientation, ['horizontal', 'vertical'], 'horizontal');
       o.fontSize ??= 19;
       o.text ??= '';
@@ -131,6 +132,7 @@ export function validateProject(value) {
   for (const [k, fallback] of Object.entries({
     grid: true,
     markers: false,
+    scaleMarkersInitialized: false,
     snapGrid: true,
     snapObjects: true,
   }))

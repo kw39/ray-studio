@@ -39,6 +39,59 @@ test.beforeEach(async ({ page }) => {
   await page.goto('./');
   await page.waitForFunction(() => window.rayStudio);
 });
+test('editable big-square scale markers synchronize, align, and survive save/open', async ({
+  page,
+}) => {
+  const original = await state(page);
+  await expect(page.locator('#grid-scale')).toHaveValue(String(original.settings.scale * 5));
+  await page.locator('#clear-all-btn').click();
+  await page.locator('#show-markers').check();
+  let d = await state(page);
+  const arrows = d.objects.filter((o) => o.scaleMarker);
+  expect(arrows).toHaveLength(2);
+  for (const arrow of arrows) {
+    const [a, b] = arrow.nodes.map((id) => d.nodes[id]);
+    expect(Math.hypot(b.x - a.x, b.y - a.y)).toBe(200);
+    for (const p of [a, b]) {
+      expect(p.x % 40).toBe(0);
+      expect(p.y % 40).toBe(0);
+    }
+  }
+  await page.locator('#grid-scale').fill('0.751');
+  await page.locator('#grid-scale').press('Tab');
+  for (const arrow of arrows)
+    await expect(page.locator(`[data-oid="${arrow.id}"] [data-label]`)).toHaveText('0.751 m');
+  const horizontal = arrows.find((o) => o.orientation === 'horizontal');
+  await page.locator(`[data-oid="${horizontal.id}"] [data-label]`).click();
+  await page.locator('[data-prop="attached.text"]').fill('1.25 cm');
+  await page.locator('[data-prop="attached.text"]').press('Tab');
+  await expect(page.locator('#grid-scale')).toHaveValue('1.25');
+  await expect(page.locator('#grid-unit')).toHaveValue('cm');
+  expect((await state(page)).settings.scale).toBe(0.25);
+  await page.locator('[data-prop="attached.text"]').fill('invalid');
+  await page.locator('[data-prop="attached.text"]').press('Tab');
+  await expect(page.locator('[data-prop="attached.text"]')).toHaveValue('1.25 cm');
+  await page.locator('[data-action="select-parent"]').click();
+  await page.locator('[data-action="delete"]').click();
+  expect((await state(page)).objects.filter((o) => o.scaleMarker)).toHaveLength(1);
+  const download = page.waitForEvent('download');
+  await page.locator('#save-btn').click();
+  const saved = await download;
+  await page.locator('#clear-all-btn').click();
+  await page.locator('#open-file').setInputFiles(await saved.path());
+  await expect
+    .poll(async () => (await state(page)).objects.filter((o) => o.scaleMarker).length)
+    .toBe(1);
+  await page.locator('#show-markers').uncheck();
+  await page.locator('#show-markers').check();
+  expect((await state(page)).objects.filter((o) => o.scaleMarker)).toHaveLength(1);
+  await page.locator('#restore-markers').click();
+  expect((await state(page)).objects.filter((o) => o.scaleMarker)).toHaveLength(2);
+  const exported = await page.evaluate(() => window.rayStudio.exportSVG(true, true));
+  expect(exported).toContain('1 big square = 1.25 cm');
+  expect(exported).not.toContain('1 small square =');
+  await page.screenshot({ path: test.info().outputPath('scale-markers.png') });
+});
 test('grid-sized symbols, persistent sections, and draggable text sizing', async ({ page }) => {
   await page.locator('#clear-all-btn').click();
   const place = async (type, x, y) => {
