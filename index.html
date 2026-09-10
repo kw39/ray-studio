@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ray Studio — Physics diagram editor</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Ray Studio home"
+        ><span class="brand-mark">✳</span
+        ><span>Ray Studio<small>PHYSICS, CLEARLY DRAWN</small></span></a
+      >
+      <div class="document-title">
+        <input id="project-name" aria-label="Diagram name" value="Plane mirror study" /><span
+          id="save-status"
+          role="status"
+          >Saved on this device</span
+        >
+      </div>
+      <nav class="file-actions" aria-label="File actions">
+        <button id="new-btn">New</button><button id="open-btn">Open</button
+        ><button id="save-btn">Save project</button
+        ><button class="primary" id="export-btn">Export <span>↗</span></button
+        ><button
+          class="help-button"
+          id="help-btn"
+          aria-label="Help and shortcuts"
+          title="Help & shortcuts"
+        >
+          ?
+        </button>
+      </nav>
+    </header>
+    <div class="workspace">
+      <aside class="toolbox">
+        <div class="rail-heading">YOUR TOOLKIT <span>TOOLS</span></div>
+        <div id="tools" class="tools"></div>
+        <div class="rail-note">
+          <span class="note-symbol">↳</span><strong>Start with a little light.</strong>
+          <p>Drag a tool onto the grid, or select it and draw.</p>
+          <button id="example-btn">Load reflection example <span>↗</span></button>
+        </div>
+        <div class="rail-footer">
+          <span class="status-dot"></span> Local & private <small>No uploads. No sign-in.</small>
+        </div>
+      </aside>
+      <main class="drawing-area">
+        <div class="canvas-toolbar">
+          <div class="history-controls">
+            <button id="undo-btn" title="Undo (Ctrl/⌘ Z)" aria-label="Undo">↶</button
+            ><button id="redo-btn" title="Redo (Ctrl/⌘ Shift Z)" aria-label="Redo">↷</button
+            ><span class="divider"></span
+            ><button id="duplicate-btn" title="Duplicate (Ctrl/⌘ D)" aria-label="Duplicate">
+              ⧉</button
+            ><button id="delete-btn" title="Delete selected object" aria-label="Delete">⌫</button
+            ><button
+              id="clear-all-btn"
+              title="Remove all diagram items; keep grid settings. Undo restores them."
+            >
+              Clear all
+            </button>
+          </div>
+          <div class="view-controls">
+            <label class="switch-label"
+              ><input type="checkbox" id="snap-grid" checked /> Snap to grid</label
+            ><label class="switch-label"
+              ><input type="checkbox" id="snap-objects" checked /> Snap to objects</label
+            ><span class="divider"></span
+            ><button id="fit-btn" title="Fit page (0)">Fit page</button>
+          </div>
+        </div>
+        <div class="canvas-container" id="canvas-container">
+          <div class="canvas-badge">
+            <span class="status-dot"></span><span id="canvas-title">PLANE MIRROR STUDY</span>
+          </div>
+          <svg
+            id="canvas"
+            xmlns="http://www.w3.org/2000/svg"
+            role="application"
+            aria-label="Ray diagram drawing canvas"
+            tabindex="0"
+          >
+            <defs>
+              <pattern id="minor-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#b6bfc0" stroke-width="0.9" />
+              </pattern>
+              <pattern id="major-grid" width="200" height="200" patternUnits="userSpaceOnUse">
+                <rect width="200" height="200" fill="url(#minor-grid)" />
+                <path d="M 200 0 L 0 0 0 200" fill="none" stroke="#566466" stroke-width="1.7" />
+              </pattern>
+            </defs>
+            <g id="world">
+              <rect class="paper" width="1000" height="760" fill="white" />
+              <rect id="grid-layer" width="1000" height="760" fill="url(#major-grid)" />
+              <rect
+                id="grid-border"
+                width="1000"
+                height="800"
+                fill="none"
+                stroke="#566466"
+                stroke-width="1.7"
+                pointer-events="none"
+              />
+              <g id="scale-layer"></g>
+              <g id="objects-layer"></g>
+              <g id="preview-layer"></g>
+              <g id="selection-layer"></g>
+            </g>
+          </svg>
+          <div class="canvas-bottom">
+            <div class="scale-pill">
+              <span class="scale-icon">↔</span
+              ><span id="scale-summary">1 small square = 0.5 m</span>
+            </div>
+            <div class="zoom-pill">
+              <button id="zoom-out" aria-label="Zoom out">−</button
+              ><button id="zoom-reset" title="Reset zoom">100%</button
+              ><button id="zoom-in" aria-label="Zoom in">+</button>
+            </div>
+          </div>
+        </div>
+        <footer class="canvas-status">
+          <span id="tool-hint">Select an object to edit. Space + drag to pan.</span
+          ><span id="object-count">0 objects</span><span id="coordinates">x 0 · y 0</span>
+        </footer>
+      </main>
+      <aside class="inspector">
+        <div class="inspector-tabs">
+          <button
+            id="properties-home"
+            title="Back to grid settings and layers"
+            aria-label="Back to main properties"
+            hidden
+          >
+            ← Back</button
+          ><span>Properties</span><span class="tiny-tag" id="selected-tag">CANVAS</span>
+        </div>
+        <div id="properties"></div>
+        <section class="grid-settings">
+          <h3>Grid size</h3>
+          <p id="grid-size-summary">4 rows × 5 columns · 5 × 5 subdivisions</p>
+          <div class="form-row">
+            <label
+              >Large-grid rows<input
+                id="grid-rows"
+                type="number"
+                min="2"
+                max="30"
+                step="1"
+                value="4" /></label
+            ><label
+              >Large-grid columns<input
+                id="grid-columns"
+                type="number"
+                min="2"
+                max="30"
+                step="1"
+                value="5"
+            /></label>
+          </div>
+          <button id="apply-grid-size" style="width: 100%; margin-bottom: 18px">
+            Apply grid size
+          </button>
+          <h3>
+            Grid Scale
+            <span title="Real-world distance represented by one small grid square">ⓘ</span>
+          </h3>
+          <p>Give your diagram a sense of scale.</p>
+          <div class="form-row">
+            <label
+              >1 small square equals<input
+                id="grid-scale"
+                type="number"
+                min="0.001"
+                max="100000"
+                step="0.25"
+                value="0.5" /></label
+            ><label class="unit-field"
+              >Unit<select id="grid-unit">
+                <option>m</option>
+                <option>cm</option>
+                <option>mm</option>
+              </select></label
+            >
+          </div>
+          <label class="check-row"><input id="show-grid" type="checkbox" checked /> Show grid</label
+          ><label class="check-row"
+            ><input id="show-markers" type="checkbox" /> Show scale markers</label
+          >
+        </section>
+        <section class="layers-section">
+          <div class="section-heading">
+            <h3>Layers</h3>
+            <span id="layer-count">0</span>
+          </div>
+          <div id="layers"></div>
+          <div class="layer-actions">
+            <button id="back-btn" title="Send backward one layer">↓ Backward</button
+            ><button id="forward-btn" title="Bring forward one layer">↑ Forward</button>
+          </div>
+        </section>
+      </aside>
+    </div>
+    <input id="open-file" type="file" accept=".ray.json,.json" hidden />
+    <dialog id="export-dialog" aria-label="Export your diagram">
+      <form method="dialog">
+        <div class="dialog-top">
+          <div>
+            <div class="eyebrow">READY FOR THE CLASSROOM</div>
+            <h2>Export your diagram</h2>
+          </div>
+          <button class="icon-close" aria-label="Close export dialog">×</button>
+        </div>
+        <p>A clean page with only your diagram. No tools, handles, or panels.</p>
+        <label class="check-row"
+          ><input id="export-grid" type="checkbox" checked /> Include square grid</label
+        ><label class="check-row"
+          ><input id="export-scale" type="checkbox" checked /> Include Grid Scale caption</label
+        >
+        <div class="export-formats">
+          <button type="button" data-export="png">
+            <strong>PNG</strong><span>High resolution image</span
+            ><small id="png-dimensions">2000 × 1600 px</small></button
+          ><button type="button" data-export="svg">
+            <strong>SVG</strong><span>Scalable vector artwork</span
+            ><small>Sharp at any size</small></button
+          ><button type="button" data-export="pdf">
+            <strong>PDF</strong><span>Print-ready document</span
+            ><small>Matches your grid proportions</small>
+          </button>
+        </div>
+        <button id="print-btn" type="button" class="print-action">Print diagram…</button>
+        <div id="export-status" role="status"></div>
+      </form>
+    </dialog>
+    <dialog id="new-dialog" aria-label="Create a new diagram">
+      <form method="dialog">
+        <div class="eyebrow">A FRESH SHEET</div>
+        <h2>Create a new diagram?</h2>
+        <p>
+          Your current diagram will be replaced. Save a project file first if you want to keep it.
+          You can also undo this action.
+        </p>
+        <div class="dialog-actions">
+          <button value="cancel">Keep drawing</button
+          ><button class="primary" id="confirm-new" value="new">New blank diagram</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="help-dialog" aria-label="Drawing help and shortcuts">
+      <form method="dialog">
+        <div class="dialog-top">
+          <div>
+            <div class="eyebrow">A FEW USEFUL SHORTCUTS</div>
+            <h2>Make room for discovery.</h2>
+          </div>
+          <button class="icon-close" aria-label="Close help">×</button>
+        </div>
+        <div class="help-copy">
+          <p>
+            <b>Place:</b> drag any tool onto the grid. Or choose a line tool, click its start, then
+            click its end.
+          </p>
+          <p>
+            <b>Connected rays:</b> each click adds a segment. Press Enter or double-click to finish;
+            Escape cancels the unfinished segment. Orange junction handles move all connected
+            segments together.
+          </p>
+          <p>
+            <b>Grid size:</b> choose large-grid rows and columns, then Apply grid size. Each large
+            square contains 5 × 5 small squares. For example, 10 rows and 8 columns gives a portrait
+            grid. Grid Scale refers to one small square.
+          </p>
+          <p>
+            <b>Labels:</b> drag an endpoint label, measurement, point name, or observer name
+            independently. Select a label and press Delete to remove just its text. Re-enter text in
+            its parent object’s Properties to restore it.
+          </p>
+          <p>
+            <b>Edit:</b> select a diagram element. Drag its endpoints to resize, or use the circular
+            handle to rotate. The Properties panel provides precise controls, including label
+            offsets.
+          </p>
+          <p>
+            <b>Navigate:</b> scroll to zoom around the pointer; Space + drag, middle-drag, or the
+            Pan tool to move. Press 0 to fit the page.
+          </p>
+          <p>
+            <b>Snap:</b> grid snapping uses square intersections. Object snapping uses existing
+            endpoints; rays automatically join other ray endpoints. Turn it off to place an
+            independent endpoint.
+          </p>
+          <p>
+            <b>Save:</b> Save project downloads an editable .ray.json file. Open reloads it. The
+            current diagram also autosaves in this browser.
+          </p>
+        </div>
+        <dl class="shortcut-list">
+          <dt>Select / Pan / Ray / Label</dt>
+          <dd>V / H / R / T</dd>
+          <dt>Undo / Redo</dt>
+          <dd>Ctrl/⌘ Z / Shift Z</dd>
+          <dt>Copy / Paste / Duplicate</dt>
+          <dd>Ctrl/⌘ C / V / D</dd>
+          <dt>Delete selected</dt>
+          <dd>Delete / Backspace</dd>
+          <dt>Finish / Cancel drawing</dt>
+          <dd>Enter / Escape</dd>
+          <dt>Move selected / larger step</dt>
+          <dd>Arrow keys / Shift + arrows</dd>
+        </dl>
+      </form>
+    </dialog>
+    <div id="toast" role="status"></div>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
