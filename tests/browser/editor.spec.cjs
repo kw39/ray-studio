@@ -36,7 +36,7 @@ function physics(d) {
   }
 }
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await page.waitForFunction(() => window.rayStudio);
 });
 test('observer dragging, geometry, grid centering, and disconnect remain correct', async ({

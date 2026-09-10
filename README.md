@@ -4,6 +4,16 @@ A physics ray-diagram editor for teachers and students. Build clean reflection d
 
 ## Quick start
 
+### Use it online
+
+[Open Ray Studio in your browser](https://kw39.github.io/ray-studio/)
+
+No installation is required. Your diagrams stay in your browser or downloaded
+project files; there is no cloud account or cross-device synchronization. Use
+Save project and Open to transfer diagrams between the website and Windows app.
+Their browser autosaves are separate. GitHub hosts the website and may retain
+standard visitor logs under its privacy policy.
+
 ### Standalone Windows app — no Node.js needed
 
 [Download Ray Studio for Windows x64](https://github.com/kw39/ray-studio/releases/download/v1.1.0/Ray-Studio-1.1.0-windows-x64.zip) · [Release details](https://github.com/kw39/ray-studio/releases/tag/v1.1.0)
@@ -130,6 +140,23 @@ The build downloads the official Node.js 24.19.0 runtime, checks its SHA-256 aga
 `test:exe` copies only the executable into an isolated folder, removes Node from its PATH, verifies the embedded assets, and runs the browser tests against it. These checks currently run locally; GitHub Actions is not yet enabled for this repository.
 
 The readable editor source remains in `app.js`; `project-schema.mjs` validates and normalizes imported projects; `serve.cjs` serves only the app assets on loopback. `tests/` contains portable unit and browser tests, and `scripts/` contains verification and packaging commands. Generated builds and local test artifacts are ignored by Git.
+
+## Publishing the website
+
+GitHub Pages serves the `gh-pages` branch. After committing and pushing changes
+to `main`, a maintainer with repository write access can run `npm run deploy:web`.
+This publishes the four browser assets and MIT license from the committed source.
+The command requires Git and GitHub authentication; visitors need neither.
+GitHub then deploys the branch, usually within a few minutes. Pushing to `main`
+alone does not update the website. The Windows release is updated separately.
+
+To test the live website in PowerShell, run:
+
+```powershell
+$env:TEST_APP_URL = 'https://kw39.github.io/ray-studio/'
+npm run test:browser
+Remove-Item Env:TEST_APP_URL
+```
 
 ## Contributing
 
