@@ -109,6 +109,10 @@ function make(type, p, q = null, shared = null) {
   if (type === 'dot' || type === 'dash') {
     const marker = make('point', p);
     marker.marker = type;
+    if (type === 'dot') {
+      marker.size = STEP / 2;
+      marker.dx = STEP / 2 + 12;
+    }
     if (type === 'dash') {
       marker.size = 12;
       marker.dx = 20;
