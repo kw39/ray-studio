@@ -6,6 +6,8 @@ A physics ray-diagram editor for teachers and students. Build clean reflection d
 
 ### Standalone Windows app — no Node.js needed
 
+[Download Ray Studio for Windows x64](https://github.com/kw39/ray-studio/releases/download/v1.1.0/Ray-Studio-1.1.0-windows-x64.zip) · [Release details](https://github.com/kw39/ray-studio/releases/tag/v1.1.0)
+
 Extract the packaged Windows download and double-click **Ray Studio.exe**. It opens the editor in your default browser. The executable includes its runtime and app files, works offline, and does not require administrator access or a Node.js installation. It targets Windows 10/11 x64 with a modern browser.
 
 Keep the server window open while drawing. Close it or press **Ctrl+C** to stop. Launching the app again opens the running instance. This build is unsigned; Windows or your organization's policy may display an unknown-publisher warning or require a signed build.
