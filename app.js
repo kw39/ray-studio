@@ -720,8 +720,8 @@ function parseScale(text) {
 function ensureScaleMarkers(restore = false) {
   if (!doc.settings.markers || (doc.settings.scaleMarkersInitialized && !restore)) return;
   doc.settings.scaleMarkersInitialized = true;
-  const x = doc.settings.columns === 2 ? STEP * 2 : BIG;
-  const y = doc.settings.rows === 2 ? STEP * 2 : BIG;
+  const x = STEP;
+  const y = STEP * 2;
   for (const orientation of ['horizontal', 'vertical']) {
     if (doc.objects.some((o) => o.scaleMarker && o.orientation === orientation)) continue;
     const o = make(
@@ -1717,6 +1717,19 @@ $('#restore-markers').onclick = () =>
   change(() => {
     doc.settings.markers = true;
     ensureScaleMarkers(true);
+  });
+$('#reset-marker-position').onclick = () =>
+  change(() => {
+    for (const o of doc.objects.filter((item) => item.scaleMarker)) {
+      // Paper coordinates are independent of the viewport and previous grid size.
+      doc.nodes[o.nodes[0]] = { x: STEP, y: STEP * 2 };
+      doc.nodes[o.nodes[1]] = {
+        x: STEP + (o.orientation === 'horizontal' ? BIG : 0),
+        y: STEP * 2 + (o.orientation === 'vertical' ? BIG : 0),
+      };
+      o.labelDx = 0;
+      o.labelDy = 0;
+    }
   });
 $('#apply-grid-size').onclick = () => {
   const rows = Number($('#grid-rows').value),

@@ -39,6 +39,46 @@ test.beforeEach(async ({ page }) => {
   await page.goto('./');
   await page.waitForFunction(() => window.rayStudio);
 });
+test('scale markers reset to the paper corner after shrinking or enlarging the grid', async ({
+  page,
+}) => {
+  await page.locator('#clear-all-btn').click();
+  await page.locator('#show-markers').check();
+  const checkCorner = async () => {
+    const d = await state(page);
+    for (const o of d.objects.filter((item) => item.scaleMarker)) {
+      const [a, b] = o.nodes.map((id) => d.nodes[id]);
+      expect(a).toEqual({ x: 40, y: 80 });
+      expect(b).toEqual(o.orientation === 'horizontal' ? { x: 240, y: 80 } : { x: 40, y: 280 });
+      expect(b.x).toBeLessThan(d.settings.columns * 200);
+      expect(b.y).toBeLessThan(d.settings.rows * 200);
+    }
+  };
+  await checkCorner();
+  for (const [rows, columns] of [
+    [2, 2],
+    [12, 10],
+    [3, 4],
+  ]) {
+    await page.locator('#grid-rows').fill(String(rows));
+    await page.locator('#grid-columns').fill(String(columns));
+    await page.locator('#apply-grid-size').click();
+    const before = await state(page);
+    await page.locator('#reset-marker-position').click();
+    await checkCorner();
+    expect((await state(page)).settings.scale).toBe(before.settings.scale);
+    await page.keyboard.press('Control+z');
+    expect((await state(page)).nodes).toEqual(before.nodes);
+    await page.locator('#reset-marker-position').click();
+  }
+  const arrow = (await state(page)).objects.find((o) => o.scaleMarker);
+  await select(page, arrow.id);
+  await page.locator('[data-action="delete"]').click();
+  await page.locator('#reset-marker-position').click();
+  expect((await state(page)).objects.filter((o) => o.scaleMarker)).toHaveLength(1);
+  await checkCorner();
+  await page.screenshot({ path: test.info().outputPath('reset-marker-corner.png') });
+});
 test('editable big-square scale markers synchronize, align, and survive save/open', async ({
   page,
 }) => {
