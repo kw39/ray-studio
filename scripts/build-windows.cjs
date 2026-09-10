@@ -69,6 +69,7 @@ async function build() {
     sentinelFuse: 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
   });
   fs.writeFileSync(path.join(output, 'NODE-LICENSE.txt'), notices);
+  fs.copyFileSync(path.join(root, 'LICENSE'), path.join(output, 'LICENSE'));
   fs.copyFileSync(
     path.join(root, 'docs', 'WINDOWS-QUICK-START.txt'),
     path.join(output, 'README.txt'),

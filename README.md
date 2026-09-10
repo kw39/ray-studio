@@ -127,10 +127,16 @@ npm run test:exe
 
 The build downloads the official Node.js 24.19.0 runtime, checks its SHA-256 against the official distribution checksums, and embeds the app using Node's single-executable format. Build-time downloads require internet access. The resulting folder is `dist/Ray-Studio-1.1.0-windows-x64/`, including the executable, a quick-start guide, runtime notices, checksum, and build metadata.
 
-`test:exe` copies only the executable into an isolated folder, removes Node from its PATH, verifies the embedded assets, and runs the browser tests against it. The GitHub workflow runs the same checks and retains a Windows build artifact; it does not publish releases or deploy a website.
+`test:exe` copies only the executable into an isolated folder, removes Node from its PATH, verifies the embedded assets, and runs the browser tests against it. These checks currently run locally; GitHub Actions is not yet enabled for this repository.
 
 The readable editor source remains in `app.js`; `project-schema.mjs` validates and normalizes imported projects; `serve.cjs` serves only the app assets on loopback. `tests/` contains portable unit and browser tests, and `scripts/` contains verification and packaging commands. Generated builds and local test artifacts are ignored by Git.
 
-## License status
+## Contributing
 
-No application license has been selected for this repository. The standalone executable embeds Node.js and its third-party license notices; these are also supplied as `NODE-LICENSE.txt` and available with `Ray Studio.exe --licenses`.
+Bug reports and improvements are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for reporting details and development checks.
+
+## License
+
+Ray Studio is licensed under the [MIT License](LICENSE), copyright 2026 kw39. You may use, modify, and redistribute it, including commercially, while retaining the copyright and license notice. The software is provided without warranty.
+
+The standalone executable embeds Node.js and its third-party components, which retain their own license terms. Their notices are supplied as `NODE-LICENSE.txt` and available with `Ray Studio.exe --licenses`. The application license is also attached to the v1.1.0 release; future Windows packages include it in the extracted folder.

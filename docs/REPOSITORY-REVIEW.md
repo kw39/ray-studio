@@ -23,7 +23,8 @@ Local result: syntax checks passed; all 7 unit tests and all 4 browser workflows
 passed. The same 4 browser workflows also passed against the final standalone
 executable with Node removed from PATH. The dependency audit reported 0 known
 vulnerabilities. The Windows ZIP and executable were built locally; remote CI has
-not run for these unpushed changes.
+not run. The application changes and v1.1.0 Windows release have been published
+to GitHub; automated verification remains local.
 
 - `npm run check`: syntax checks for maintained source and verification scripts.
 - `npm test`: schema and server behavior, including failure paths.
@@ -38,12 +39,26 @@ They are local historical checks, not inputs to the maintained build or CI.
 
 ## Remaining decisions and limits
 
-- The application has no explicit license. No license was chosen on the owner's behalf.
+- The owner selected the MIT License. It is included in the repository and future
+  Windows packages; the existing release receives a separate license asset.
 - The executable is unsigned. Windows or managed devices may warn or require signing.
 - Windows x64 is the supported build target. A separate clean Windows VM, ARM64,
   macOS packaging, and Linux packaging were not tested.
-- No app release, visibility change, remote CI run, or production deployment is part
-  of this local review. The repository remains private unless the owner changes it.
+- GitHub Actions is not active. Publishing the prepared workflow requires GitHub
+  authentication with workflow permission and a successful remote run.
 - Browser drawing remains a visual interaction; the added labels and keyboard
   controls do not establish full assistive-technology accessibility.
 - PDF export remains raster-based; SVG is the vector export format.
+
+## Public-release follow-up
+
+The four reachable commits (62 file versions) were scanned for common token,
+private-key, personal-path, and known private-email patterns, with no matches.
+Pattern matching cannot prove the absence of every possible secret. Git authors
+use a GitHub no-reply email. Source control excludes downloaded runtimes, build
+outputs, and personal diagram files.
+
+The README now accurately describes local verification, MIT licensing, and
+contribution instructions. Syntax checks and all seven unit tests passed again
+after the license and packaging changes. The existing tested executable remains
+unchanged; future builds copy the MIT license into their output folder.

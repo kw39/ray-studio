@@ -26,5 +26,6 @@ For command-line use:
   "Ray Studio.exe" --version     Show the app version
   "Ray Studio.exe" --licenses    Show embedded runtime license notices
 
-Runtime notices are also in NODE-LICENSE.txt. The repository has no explicit
-application license selected yet. Packaging does not change that status.
+Ray Studio is licensed under the MIT License; see LICENSE for its terms.
+Node.js and its bundled third-party components retain their own license terms.
+Their notices are included in NODE-LICENSE.txt.
