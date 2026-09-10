@@ -41,7 +41,12 @@ const TOOLS = [
   ['arrow', 'Double arrow', '', 'An arrow with independently editable endpoint labels.'],
   ['ray', 'Light ray', 'R', 'Connected rays with a middle arrowhead. Enter finishes the path.'],
   ['line', 'Plain line', '', 'A solid, dashed, or dotted line without arrows.'],
-  ['label', 'Text label', 'T', 'Add letters, measurements, or a short description.'],
+  [
+    'label',
+    'Text',
+    'T',
+    'Write text on the grid. Edit it in Properties and drag its corner to resize.',
+  ],
   ['measure', 'Measurement', '', 'A horizontal or vertical dimension arrow.'],
   ['point', 'Point / marker', '', 'A point, cross, or circle with an optional label.'],
   ['wall', 'Wall / object', '', 'An object line with attached endpoint labels.'],
@@ -96,8 +101,8 @@ function node(p) {
 }
 function labels(a = '', b = '') {
   return [
-    { text: a, dx: 12, dy: -12, size: 22, bold: false, italic: true, align: 'start' },
-    { text: b, dx: 12, dy: 22, size: 22, bold: false, italic: true, align: 'start' },
+    { text: a, dx: 16, dy: -16, size: 54, bold: false, italic: true, align: 'start' },
+    { text: b, dx: 16, dy: 60, size: 54, bold: false, italic: true, align: 'start' },
   ];
 }
 function make(type, p, q = null, shared = null) {
@@ -137,20 +142,20 @@ function make(type, p, q = null, shared = null) {
       o.auto = true;
       o.text = '1 m';
       o.orientation = Math.abs(q.x - p.x) >= Math.abs(q.y - p.y) ? 'horizontal' : 'vertical';
-      o.fontSize = 19;
+      o.fontSize = 54;
     }
   } else {
     Object.assign(o, { x: p.x, y: p.y, angle: 0 });
     if (type === 'label')
-      Object.assign(o, { text: 'Label', fontSize: 24, bold: false, italic: false, align: 'start' });
+      Object.assign(o, { text: 'Text', fontSize: 54, bold: false, italic: false, align: 'start' });
     if (type === 'point')
-      Object.assign(o, { marker: 'dot', size: 6, label: 'E', fontSize: 20, dx: 13, dy: -10 });
+      Object.assign(o, { marker: 'dot', size: 6, label: 'E', fontSize: 54, dx: 13, dy: -10 });
     if (type === 'eye')
       Object.assign(o, {
         size: 72,
         flip: false,
         label: 'observer',
-        fontSize: 20,
+        fontSize: 54,
         labelDx: 0,
         labelDy: 0,
       });
@@ -205,6 +210,7 @@ function example() {
   }
   const mirror = make('mirror', { x: mirrorX, y: 130 }, { x: mirrorX, y: 665 });
   Object.assign(mirror, { side: -1, labels: labels('M₁', 'M₂') });
+  Object.assign(mirror.labels[1], { dx: 50, dy: -25 });
   // Corrected side-view orientation. Rays meet the pupil on the mirror-facing side.
   const eye = make('eye', { x: eyePoint.x - (6 * 72) / 80, y: eyePoint.y });
   Object.assign(eye, { flip: false, label: 'Observer' });
@@ -472,10 +478,19 @@ function line(a, b, attr = '') {
   return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" ${attr}/>`;
 }
 function head(p, r, color, size = 10) {
-  return `<path d="M ${p.x} ${p.y} L ${p.x - size * Math.cos(r - 0.46)} ${p.y - size * Math.sin(r - 0.46)} L ${p.x - size * Math.cos(r + 0.46)} ${p.y - size * Math.sin(r + 0.46)} Z" fill="${esc(color)}" stroke="none"/>`;
+  const x = p.x - size * Math.cos(r),
+    y = p.y - size * Math.sin(r);
+  return `<path d="M ${p.x} ${p.y} L ${x - (size / 2) * Math.sin(r)} ${y + (size / 2) * Math.cos(r)} L ${x + (size / 2) * Math.sin(r)} ${y - (size / 2) * Math.cos(r)} Z" fill="${esc(color)}" stroke="none"/>`;
 }
 function textAt(p, text, size = 20, attr = '') {
-  return `<text x="${p.x}" y="${p.y}" font-family="Georgia, 'Times New Roman', serif" font-size="${size}" ${attr}>${esc(text)}</text>`;
+  return `<text x="${p.x}" y="${p.y}" font-family="Georgia, 'Times New Roman', serif" font-size="${size}" ${attr}>${String(
+    text,
+  )
+    .split('\n')
+    .map(
+      (row, i) => `<tspan x="${p.x}" dy="${i ? size * 1.25 : 0}">${esc(row) || '&#160;'}</tspan>`,
+    )
+    .join('')}</text>`;
 }
 function measureValue(o) {
   if (!o.auto) return o.text || '';
@@ -499,27 +514,30 @@ function objectSVG(o, interactive = false) {
       const ux = (b.x - a.x) / len,
         uy = (b.y - a.y) / len,
         s = o.side || 1;
-      for (let t = 0; t <= len; t += 14) {
+      const hatch = STEP / Math.sqrt(2);
+      for (let t = 0; t <= len; t += STEP) {
         const p = { x: a.x + ux * t, y: a.y + uy * t };
         body += line(
           p,
-          { x: p.x - uy * 11 * s - ux * 6, y: p.y + ux * 11 * s - uy * 6 },
-          `stroke="${color}" stroke-width="1.4"`,
+          { x: p.x - uy * hatch * s - ux * hatch, y: p.y + ux * hatch * s - uy * hatch },
+          `stroke="${color}" stroke-width="${o.width}"`,
         );
       }
     }
     if (o.type === 'arrow' || o.type === 'measure')
-      body += head(a, r + Math.PI, o.color, 10) + head(b, r, o.color, 10);
-    if (o.type === 'wall' && o.head) body += head(a, r + Math.PI, o.color, 12);
+      body +=
+        head(a, r + Math.PI, o.color, (STEP * o.width) / 2.3) +
+        head(b, r, o.color, (STEP * o.width) / 2.3);
+    if (o.type === 'wall' && o.head) body += head(a, r + Math.PI, o.color, (STEP * o.width) / 2.3);
     if (o.type === 'ray')
-      body += head(m, r + (o.reverse ? Math.PI : 0), o.color, Math.max(11, o.width * 4));
+      body += head(m, r + (o.reverse ? Math.PI : 0), o.color, (STEP * o.width) / 2.3);
     if (o.type === 'measure') {
       const n = { x: -Math.sin(r), y: Math.cos(r) };
       for (const p of [a, b])
         body += line(
           { x: p.x + n.x * 10, y: p.y + n.y * 10 },
           { x: p.x - n.x * 10, y: p.y - n.y * 10 },
-          `stroke="${color}" stroke-width="1"`,
+          `stroke="${color}" stroke-width="${o.width}"`,
         );
     }
     if (interactive) body = line(a, b, `class="hit-line" stroke-width="18"`) + body;
@@ -640,7 +658,7 @@ function renderLabelProperties(o, key) {
   const l = labelInfo(o, key);
   $('#selected-tag').textContent = 'LABEL';
   $('#properties').innerHTML =
-    `<div class="selected-properties"><h3>Attached label</h3><p>Drag this label anywhere. It will follow its object when the object moves.</p>${field('Label text', 'attached.text', l.text, 'text', 'maxlength="100"')}${field('Font size (px)', 'attached.size', l.size, 'number', 'min="8" max="100"')}<div class="form-row">${field('Offset X (px)', 'attached.dx', l.dx)}${field('Offset Y (px)', 'attached.dy', l.dy)}</div><div class="small-actions"><button data-action="select-parent">Select object</button><button data-action="delete-label">Delete label</button></div></div>`;
+    `<div class="selected-properties"><h3>Attached label</h3><p>Drag to move the label; drag its corner to resize. It follows its object when the object moves.</p>${field('Label text', 'attached.text', l.text, 'text', 'maxlength="100"')}${field('Font size (px)', 'attached.size', l.size, 'number', 'min="8" max="200"')}<div class="form-row">${field('Offset X (px)', 'attached.dx', l.dx)}${field('Offset Y (px)', 'attached.dy', l.dy)}</div><div class="small-actions"><button data-action="select-parent">Select object</button><button data-action="delete-label">Delete label</button></div></div>`;
 }
 function bounds(o) {
   if (o.nodes) {
@@ -655,11 +673,16 @@ function bounds(o) {
   const size = o.type === 'eye' ? o.size : o.type === 'point' ? o.size * 3 : o.fontSize,
     w =
       o.type === 'label'
-        ? Math.max(24, (o.text || '').length * size * 0.57)
+        ? Math.max(
+            24,
+            ...String(o.text || '')
+              .split('\n')
+              .map((row) => row.length * size * 0.57),
+          )
         : o.type === 'eye'
           ? size * 0.5
           : size,
-    h = o.type === 'label' ? size * 1.25 : size;
+    h = o.type === 'label' ? size * 1.25 * String(o.text || '').split('\n').length : size;
   return {
     x:
       o.x -
@@ -732,7 +755,8 @@ function renderSelection() {
     const l = labelInfo(o, lk),
       w = Math.max(12, l.text.length * l.size * 0.57),
       x = l.x - (l.align === 'middle' ? w / 2 : l.align === 'end' ? w : 0);
-    layer.innerHTML = `<rect class="selected-outline" x="${x - 5}" y="${l.y - l.size - 5}" width="${w + 10}" height="${l.size * 1.3 + 10}"/>`;
+    const rad = 6 / view.k;
+    layer.innerHTML = `<rect class="selected-outline" x="${x - 5}" y="${l.y - l.size - 5}" width="${w + 10}" height="${l.size * 1.3 + 10}"/><rect class="handle" data-handle="label-resize" x="${x + w + 5 - rad}" y="${l.y + l.size * 0.3 + 5 - rad}" width="${rad * 2}" height="${rad * 2}"/>`;
     return;
   }
   const b = bounds(o),
@@ -761,7 +785,8 @@ function renderSelection() {
         `stroke="#538f83" stroke-width="1" pointer-events="none"`,
       ) + `<circle class="rotate-handle" data-handle="rotate" cx="${x}" cy="${y}" r="${rad}"/>`;
   }
-  layer.innerHTML = out;
+  layer.innerHTML =
+    o.type === 'label' ? `<g transform="rotate(${o.angle || 0} ${o.x} ${o.y})">${out}</g>` : out;
 }
 function renderPreview() {
   if (!drawing || !hover) {
@@ -815,6 +840,14 @@ let inspectorTarget = null;
 function renderProperties() {
   const item = current(),
     target = item ? `${item.id}:${activeLabel() ?? 'object'}` : null;
+  const expanded =
+    target === inspectorTarget
+      ? new Set(
+          $$('#properties details')
+            .filter((el) => el.open)
+            .map((el) => el.querySelector('summary').textContent),
+        )
+      : new Set();
   $('.inspector').classList.toggle('editing', !!item);
   $('.grid-settings').hidden = !!item;
   $('.layers-section').hidden = !!item;
@@ -850,7 +883,7 @@ function renderProperties() {
     if (o.type !== 'point')
       out += field('Rotation (°)', 'angle', round(o.angle || 0), 'number', 'step="5"');
   }
-  out += `<div class="property-section"><h4>Appearance</h4><div class="form-row">${field('Colour', 'color', o.color, 'color')}${field('Thickness (px)', 'width', o.width, 'number', 'min="0.5" max="16" step="0.5"')}</div>`;
+  out += `<div class="property-section"><h4>Appearance</h4><div class="form-row">${field('Colour', 'color', o.color, 'color')}${field('Thickness (px)', 'width', o.width, 'number', 'min="0.5" max="16" step="any"')}</div>`;
   if (o.nodes && o.type !== 'mirror')
     out += selectField('Line style', 'style', o.style, [
       ['solid', 'Solid'],
@@ -870,13 +903,13 @@ function renderProperties() {
   if (o.type === 'eye')
     out +=
       field('Name above eye', 'label', o.label ?? 'observer', 'text', 'maxlength="100"') +
-      field('Name font size', 'fontSize', o.fontSize || 20, 'number', 'min="8" max="100"') +
+      field('Name font size', 'fontSize', o.fontSize || 20, 'number', 'min="8" max="200"') +
       field('Size (px)', 'size', o.size, 'number', 'min="20" max="300" step="4"') +
       '<div class="small-actions"><button data-action="flip">⇄ Flip observer</button></div>';
   if (o.type === 'label')
     out +=
-      field('Text', 'text', o.text, 'text', 'maxlength="500"') +
-      field('Font size (px)', 'fontSize', o.fontSize, 'number', 'min="8" max="100"') +
+      `<label class="field">Text<textarea data-prop="text" rows="4" maxlength="500">${esc(o.text)}</textarea></label>` +
+      field('Font size (px)', 'fontSize', o.fontSize, 'number', 'min="8" max="200"') +
       `<div class="form-row">${check('Bold', 'bold', o.bold)}${check('Italic', 'italic', o.italic)}</div>` +
       selectField('Alignment', 'align', o.align, [
         ['start', 'Left'],
@@ -899,7 +932,7 @@ function renderProperties() {
         'min="2" max="30"',
       ) +
       field('Optional label', 'label', o.label, 'text') +
-      field('Label font size', 'fontSize', o.fontSize, 'number', 'min="8" max="100"') +
+      field('Label font size', 'fontSize', o.fontSize, 'number', 'min="8" max="200"') +
       `<div class="form-row">${field('Label offset X', 'dx', o.dx)}${field('Label offset Y', 'dy', o.dy)}</div>`;
   if (o.type === 'measure')
     out +=
@@ -910,7 +943,7 @@ function renderProperties() {
       check('Show measurement label', 'showMeasurement', !o.hideLabel) +
       check('Calculate from Grid Scale', 'auto', o.auto) +
       field('Measurement text', 'text', measureValue(o), 'text', o.auto ? 'disabled' : '') +
-      field('Font size (px)', 'fontSize', o.fontSize, 'number', 'min="8" max="100"');
+      field('Font size (px)', 'fontSize', o.fontSize, 'number', 'min="8" max="200"');
   out += '</div>';
   if (o.labels) {
     out += '<div class="property-section"><h4>Attached endpoint labels</h4>';
@@ -923,7 +956,7 @@ function renderProperties() {
           'text',
           'maxlength="100"',
         ) +
-        `<details><summary>${i === 0 ? 'Start' : 'End'} label position & style</summary><div class="form-row">${field('Offset X (px)', `label.${i}.dx`, l.dx)}${field('Offset Y (px)', `label.${i}.dy`, l.dy)}</div>${field('Font size (px)', `label.${i}.size`, l.size, 'number', 'min="8" max="100"')}<div class="form-row">${check('Bold', `label.${i}.bold`, l.bold)}${check('Italic', `label.${i}.italic`, l.italic)}</div>${selectField(
+        `<details><summary>${i === 0 ? 'Start' : 'End'} label position & style</summary><div class="form-row">${field('Offset X (px)', `label.${i}.dx`, l.dx)}${field('Offset Y (px)', `label.${i}.dy`, l.dy)}</div>${field('Font size (px)', `label.${i}.size`, l.size, 'number', 'min="8" max="200"')}<div class="form-row">${check('Bold', `label.${i}.bold`, l.bold)}${check('Italic', `label.${i}.italic`, l.italic)}</div>${selectField(
           'Alignment',
           `label.${i}.align`,
           l.align || 'start',
@@ -942,6 +975,9 @@ function renderProperties() {
   out +=
     '<div class="small-actions"><button data-action="duplicate">⧉ Duplicate</button><button data-action="delete">Delete</button></div></div>';
   $('#properties').innerHTML = out;
+  $$('#properties details').forEach((el) => {
+    el.open = expanded.has(el.querySelector('summary').textContent);
+  });
   if (opticalDerived(o))
     for (const key of [
       'length',
@@ -1330,6 +1366,7 @@ function onDown(e) {
       center: c,
       startAngle: Math.atan2(raw.y - c.y, raw.x - c.x),
       baseAngle: angle(o),
+      label: activeLabel() !== null ? labelInfo(o, activeLabel()) : null,
     };
     svg.setPointerCapture(e.pointerId);
     return;
@@ -1378,6 +1415,17 @@ function onMove(e) {
     labelEdit(o, activeLabel(), 'dx', round(gesture.label.dx + raw.x - gesture.start.x));
     labelEdit(o, activeLabel(), 'dy', round(gesture.label.dy + raw.y - gesture.start.y));
   }
+  if (gesture.kind === 'label-resize' || (gesture.kind === 'resize' && o.type === 'label')) {
+    const base = gesture.before.objects.find((v) => v.id === o.id);
+    const anchor = gesture.label || base;
+    const dx = gesture.start.x - anchor.x,
+      dy = gesture.start.y - anchor.y;
+    const ratio =
+      ((raw.x - anchor.x) * dx + (raw.y - anchor.y) * dy) / Math.max(1, dx * dx + dy * dy);
+    const size = clamp(Math.round((gesture.label?.size || base.fontSize) * ratio), 8, 200);
+    if (gesture.label) labelEdit(o, activeLabel(), 'size', size);
+    else o.fontSize = size;
+  }
   if (gesture.kind === 'move') {
     let dx = raw.x - gesture.start.x,
       dy = raw.y - gesture.start.y;
@@ -1421,9 +1469,8 @@ function onMove(e) {
   if (gesture.kind === 'resize') {
     const base = gesture.before.objects.find((v) => v.id === o.id),
       delta = raw.x - gesture.start.x;
-    if (o.type === 'label') o.fontSize = clamp(base.fontSize + delta * 0.3, 8, 100);
-    else if (o.type === 'eye') o.size = clamp(base.size + delta * 2, 20, 300);
-    else o.size = clamp(base.size + delta * 0.3, 2, 30);
+    if (o.type === 'eye') o.size = clamp(base.size + delta * 2, 20, 300);
+    else if (o.type === 'point') o.size = clamp(base.size + delta * 0.3, 2, 30);
   }
   renderScene();
 }
@@ -1471,7 +1518,7 @@ svg.addEventListener('dblclick', (e) => {
     $$('.tool').forEach((b) => b.classList.toggle('active', b.dataset.tool === tool));
     render();
   } else if (e.target.closest('[data-oid]')) {
-    $('#properties input[data-prop="text"]')?.focus();
+    $('#properties [data-prop="text"]')?.focus();
   }
 });
 svg.addEventListener(
