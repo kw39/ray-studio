@@ -1,0 +1,30 @@
+Ray Studio for Windows
+
+1. Extract this download into a folder.
+2. Double-click Ray Studio.exe.
+3. Your default browser opens the editor automatically.
+
+No Node.js installation, administrator access, or internet connection is needed
+to run the app. The executable contains all app files and its runtime.
+Requires Windows 10/11 x64 and a modern browser.
+
+Keep the server window open while drawing. Close it or press Ctrl+C to stop.
+Launching again opens the running instance. If another program uses port 4173,
+the app explains the conflict in its terminal. You can set PORT in the environment
+to use a different port, or close the other program.
+
+Save project downloads an editable .ray.json file. Save copies of important work.
+Browser autosave belongs to the browser profile and local address you use.
+Changing browsers or ports does not move those autosaved diagrams.
+
+The build is unsigned. Windows may display an unknown-publisher warning;
+organization policies may require a signed build. No signing certificate is
+included. Use only a build from a source you trust.
+
+For command-line use:
+  "Ray Studio.exe" --no-open     Start without opening the browser
+  "Ray Studio.exe" --version     Show the app version
+  "Ray Studio.exe" --licenses    Show embedded runtime license notices
+
+Runtime notices are also in NODE-LICENSE.txt. The repository has no explicit
+application license selected yet. Packaging does not change that status.

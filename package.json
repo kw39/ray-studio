@@ -1,1 +1,27 @@
-{"name":"ray-studio","version":"1.0.0","private":true,"description":"Local SVG physics ray diagram editor","scripts":{"start":"node serve.cjs","check":"node --check app.js && node --check serve.cjs","test":"node --test tests/server.test.cjs"}}
+{
+  "name": "ray-studio",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Physics diagram editor with live plane-mirror reflection",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kw39/ray-studio.git"
+  },
+  "engines": {
+    "node": ">=24.19.0 <25"
+  },
+  "scripts": {
+    "start": "node serve.cjs",
+    "check": "node scripts/check.cjs",
+    "test": "node --test tests/*.test.cjs",
+    "test:browser": "playwright test",
+    "format": "prettier --write app.js project-schema.mjs serve.cjs scripts tests index.html styles.css package.json playwright.config.cjs",
+    "build:windows": "node scripts/build-windows.cjs",
+    "test:exe": "node scripts/test-executable.cjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "postject": "1.0.0-alpha.6",
+    "prettier": "3.6.2"
+  }
+}

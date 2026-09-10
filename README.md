@@ -1,12 +1,20 @@
 # Ray Studio
 
-A self-contained physics ray-diagram editor for teachers and students. All project data stays in your browser or in files you save. The app has no external dependencies, analytics, accounts, or network APIs.
+A physics ray-diagram editor for teachers and students. Build clean reflection diagrams, explore a live plane-mirror example, and export your work for the classroom. Project data stays in your browser or in files you save. There are no accounts, analytics, or external APIs in the app.
 
 ## Quick start
 
-### Windows
+### Standalone Windows app — no Node.js needed
 
-1. Install the **LTS version of [Node.js](https://nodejs.org/)** if it is not already installed.
+Extract the packaged Windows download and double-click **Ray Studio.exe**. It opens the editor in your default browser. The executable includes its runtime and app files, works offline, and does not require administrator access or a Node.js installation. It targets Windows 10/11 x64 with a modern browser.
+
+Keep the server window open while drawing. Close it or press **Ctrl+C** to stop. Launching the app again opens the running instance. This build is unsigned; Windows or your organization's policy may display an unknown-publisher warning or require a signed build.
+
+The source ZIP from GitHub is different from the packaged executable. To build the executable from source, see [Development and Windows builds](#development-and-windows-builds).
+
+### Windows from source
+
+1. Install **[Node.js 24 LTS](https://nodejs.org/)** (24.19 or later in the 24.x series) if it is not already installed.
 2. Download this repository using **Code → Download ZIP**, then extract the ZIP.
 3. Double-click **Start Ray Studio.bat** in the extracted folder.
 
@@ -16,7 +24,7 @@ No build step or `npm install` is required. After downloading the app and instal
 
 ### macOS, Linux, or terminal users
 
-With Node.js installed, open a terminal in the app folder and run:
+With Node.js 24 installed, open a terminal in the app folder and run:
 
 ```sh
 npm start -- --open
@@ -65,7 +73,8 @@ To try it, choose **Load reflection example**, select the eye, and drag it. The 
 - **Save project** downloads a versioned `.ray.json` project containing all editable objects, shared endpoints, scale, and grid settings.
 - **Open** restores a saved project. New, Open, and loading the example are undoable.
 - **Clear all** in the canvas toolbar removes all diagram objects and their labels, keeping the project name and grid settings. Undo restores the full diagram, including shared ray connections.
-- The current diagram autosaves in this browser's local storage. Save a project file for a durable or transferable copy. Private browsing or clearing site data can remove the browser copy.
+- The current diagram autosaves in this browser's local storage. Save a project file for a durable or transferable copy. Private browsing or clearing site data can remove the browser copy. Browser profiles and local addresses have separate storage; use Save project and Open to move your work between them.
+- If an autosaved project cannot be opened, **Save recovery copy** downloads the original data for recovery. If browser storage is unavailable, the app shows a message to use Save project.
 - **SVG** exports vector lines and editable SVG text, with no editor controls.
 - **PNG** follows the selected grid dimensions at up to 2× resolution, capped at 4000 pixels on its longest edge. The export dialog shows the resulting pixel dimensions.
 - **PDF** exports a single page matching the grid's proportions using a high-resolution raster image. Use SVG for a fully vector format.
@@ -95,8 +104,31 @@ Ordinary diagrams use manual construction. The reflection example additionally s
 
 **Load reflection example** creates a live example showing object AB, its virtual image A′B′ at equal distance behind the mirror, and an observer. Drag the observer, object, or mirror to recalculate the image and ray intersections. The eye remains on the object's side of the mirror. Orange rays obey the law of reflection and meet the eye; green dashed backward extensions are exactly collinear with the reflected rays. Rays that miss the finite reflective face are hidden. Calculated geometry is locked while **Live reflection** is enabled; labels and appearance remain editable. Disable it to construct rays manually. Disconnecting an example segment also disables live reflection. Live settings persist in saved projects and support undo/redo. Loading the example replaces the current diagram and can be undone.
 
-## Verification
+## Development and Windows builds
 
-Run `npm run check` to check JavaScript syntax. For a quick functional check, load the reflection example, drag the observer, resize the grid, undo, save and reopen a project, and export an SVG. Run `npm test` to verify server startup and launcher behavior.
+The app runs without npm dependencies. Development tools are pinned in `package-lock.json`:
 
-Files: `index.html` provides the interface, `styles.css` the responsive layout, `app.js` the SVG editor and export logic, and `serve.cjs` the local-only static server.
+```sh
+npm ci --ignore-scripts
+npm run check
+npm test
+npx playwright install chromium
+npm run test:browser
+```
+
+Build on Windows x64:
+
+```sh
+npm run build:windows
+npm run test:exe
+```
+
+The build downloads the official Node.js 24.19.0 runtime, checks its SHA-256 against the official distribution checksums, and embeds the app using Node's single-executable format. Build-time downloads require internet access. The resulting folder is `dist/Ray-Studio-1.1.0-windows-x64/`, including the executable, a quick-start guide, runtime notices, checksum, and build metadata.
+
+`test:exe` copies only the executable into an isolated folder, removes Node from its PATH, verifies the embedded assets, and runs the browser tests against it. The GitHub workflow runs the same checks and retains a Windows build artifact; it does not publish releases or deploy a website.
+
+The readable editor source remains in `app.js`; `project-schema.mjs` validates and normalizes imported projects; `serve.cjs` serves only the app assets on loopback. `tests/` contains portable unit and browser tests, and `scripts/` contains verification and packaging commands. Generated builds and local test artifacts are ignored by Git.
+
+## License status
+
+No application license has been selected for this repository. The standalone executable embeds Node.js and its third-party license notices; these are also supplied as `NODE-LICENSE.txt` and available with `Ray Studio.exe --licenses`.

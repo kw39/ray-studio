@@ -6,3 +6,7 @@ test-output/
 .env.*
 .DS_Store
 Thumbs.db
+.build/
+dist/
+playwright-report/
+test-results/
